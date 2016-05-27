@@ -8,16 +8,16 @@ namespace uvpp {
     void poolWorkerOnEnd(uv_work_t* handler, int status);
     
     template <typename WorkReturn>
-    PoolWorker<WorkReturn>::PoolWorker() : _isRunning(false) {}
+    inline PoolWorker<WorkReturn>::PoolWorker() : _isRunning(false) {}
     
     template <typename WorkReturn>
-    PoolWorker<WorkReturn>::PoolWorker(uv_loop_t* loop, const WorkCallback& workCallback, const OnEndCallback& endCallback)
+    inline PoolWorker<WorkReturn>::PoolWorker(uv_loop_t* loop, const WorkCallback& workCallback, const OnEndCallback& endCallback)
     : _isRunning(false), _workCallback(workCallback), _endCallback(endCallback) {
         runWorker(loop);
     }
     
     template <typename WorkReturn>
-    PoolWorker<WorkReturn>::~PoolWorker() {
+    inline PoolWorker<WorkReturn>::~PoolWorker() {
         if (isRunning()) {
             stop();
         } else {
@@ -26,12 +26,12 @@ namespace uvpp {
     }
         
     template <typename WorkReturn>
-    bool PoolWorker<WorkReturn>::isRunning() const {
+    inline bool PoolWorker<WorkReturn>::isRunning() const {
         return _isRunning;
     }
     
     template <typename WorkReturn>
-    void PoolWorker<WorkReturn>::run(uv_loop_t* loop, const WorkCallback& workCallback, const OnEndCallback& endCallback) {
+    inline void PoolWorker<WorkReturn>::run(uv_loop_t* loop, const WorkCallback& workCallback, const OnEndCallback& endCallback) {
         if (isRunning()) {
             stop();
         }
@@ -41,12 +41,12 @@ namespace uvpp {
     }
     
     template <typename WorkReturn>
-    void PoolWorker<WorkReturn>::stop() {
+    inline void PoolWorker<WorkReturn>::stop() {
         uv_cancel((uv_req_t*)&_managedWorker);
     }
     
     template <typename WorkReturn>
-    void PoolWorker<WorkReturn>::runWorker(uv_loop_t* loop) {
+    inline void PoolWorker<WorkReturn>::runWorker(uv_loop_t* loop) {
         auto data =  new WorkerData{};
         data->onWork = _workCallback;
         data->onEnd = [this](PoolWorkerOpStatus opStatus, const WorkReturn& returnVal) {
@@ -59,7 +59,7 @@ namespace uvpp {
     }
     
     template<typename WorkReturn>
-    void poolWorkerOnWork(uv_work_t* handler) {
+    inline void poolWorkerOnWork(uv_work_t* handler) {
         if(handler->data != nullptr) {
             auto workerData = static_cast<typename PoolWorker<WorkReturn>::WorkerData*>(handler->data);
             workerData->workReturn = workerData->onWork();
@@ -67,7 +67,7 @@ namespace uvpp {
     }
     
     template<typename WorkReturn>
-    void poolWorkerOnEnd(uv_work_t* handler, int status) {
+    inline void poolWorkerOnEnd(uv_work_t* handler, int status) {
         auto workerData = static_cast<typename PoolWorker<WorkReturn>::WorkerData*>(handler->data);
         if(handler->data != nullptr && status != UV_ECANCELED) {
             workerData->onEnd(PoolWorkerOpStatus::Success, std::move(workerData->workReturn));

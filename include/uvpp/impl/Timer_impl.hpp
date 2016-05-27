@@ -3,18 +3,18 @@
 
 namespace uvpp {
     namespace internal {
-        void onTimerCall(uv_timer_t* handler) {
+        inline void onTimerCall(uv_timer_t* handler) {
             if(handler->data != nullptr) {
                 (*static_cast<Timer::Callback*>(handler->data))();
             }
         }
     }
     
-    Timer::Timer() : _isRunning(false) {
+    inline Timer::Timer() : _isRunning(false) {
         _managedTimer.data = nullptr;
     }
     
-    Timer::Timer(uv_loop_t* loop, uint64_t timeout, uint64_t repeat, const Timer::Callback& callback) :
+    inline Timer::Timer(uv_loop_t* loop, uint64_t timeout, uint64_t repeat, const Timer::Callback& callback) :
     _isRunning(false), _timeoutInterval(timeout), _repeatInterval(repeat), _callback(callback) {
         uv_timer_init(loop, &_managedTimer);
         _managedTimer.data = &_callback;
@@ -22,17 +22,17 @@ namespace uvpp {
         _isRunning = true;
     }
     
-    Timer::~Timer() {
+    inline Timer::~Timer() {
         if (isRunning()) {
             stop();
         }
     }
     
-    bool Timer::isRunning() const {
+    inline bool Timer::isRunning() const {
         return _isRunning;
     }
     
-    void Timer::run(uv_loop_t* loop, uint64_t timeout, uint64_t repeat, const Timer::Callback& callback) {
+    inline void Timer::run(uv_loop_t* loop, uint64_t timeout, uint64_t repeat, const Timer::Callback& callback) {
         if (isRunning()) {
             stop();
         }
@@ -45,7 +45,7 @@ namespace uvpp {
         _isRunning = true;
     }
     
-    void Timer::stop() {
+    inline void Timer::stop() {
         uv_timer_stop(&_managedTimer);
         _managedTimer.data = nullptr;
         _isRunning = false;
