@@ -12,7 +12,7 @@ namespace uvpp {
     class PoolWorker {
     public:
         using WorkCallback = std::function<WorkReturn(void)>;
-        using OnEndCallback = std::function<void(PoolWorkerOpStatus workerResult, const WorkReturn&)>;
+        using OnEndCallback = std::function<void(PoolWorkerOpStatus workerResult, WorkReturn)>;
     
         struct WorkerData {
             WorkCallback onWork;
