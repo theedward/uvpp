@@ -7,10 +7,10 @@
 
 namespace uvpp {
 	namespace internal {
-		// On data to friend
+		void onRead(uv_udp_t *udp_socket, ssize_t nread, const uv_buf_t *buf, const struct sockaddr *addr, unsigned flags);
 	}
 	class UDPSocket {
-		// Friend on Data?
+		friend void internal::onRead(uv_udp_t *udp_socket, ssize_t nread, const uv_buf_t *buf, const struct sockaddr *addr, unsigned flags);
 
 	public:
 		using OnDataCallback = std::function<void(std::string data, std::string from_host, int from_port)>;
@@ -38,7 +38,7 @@ namespace uvpp {
 		void setOnErrorCallback(const OnErrorCallback& on_error);
 
 	private:
-    	void swap(UDPSocket& other);
+    void swap(UDPSocket& other);
 		void uv_bind_and_listen();
 
 	private:
