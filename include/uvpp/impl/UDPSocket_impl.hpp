@@ -1,8 +1,6 @@
 #ifndef UDPSocket_impl_hpp
 #define UDPSocket_impl_hpp
 
-#include <iostream>
-
 namespace uvpp {
 	namespace internal {
 		inline void allocBuffer(uv_handle_t*, size_t suggested_size, uv_buf_t* buf) {
@@ -24,7 +22,7 @@ namespace uvpp {
 				if(nread != 0){
 					char ip[64];
         	uv_inet_ntop(AF_INET, &((sockaddr_in*)addr)->sin_addr, ip, sizeof(ip));
-        	int port = ((sockaddr_in*)addr)->sin_port;
+        	auto port = ntohs(((sockaddr_in*)addr)->sin_port);
 					if(socket->_on_data) socket->_on_data(std::string((char*)buf->base, (size_t) nread), ip, port);
 				}
 			}
@@ -141,6 +139,7 @@ namespace uvpp {
     uv_ip4_addr("0.0.0.0", _listening_on_port, &recv_addr);
     uv_udp_bind(_udp_socket, (const struct sockaddr *)&recv_addr, UV_UDP_REUSEADDR);
     uv_udp_recv_start(_udp_socket, internal::allocBuffer, internal::onRead);
+    _is_listening = true;
 	}
 }
 
