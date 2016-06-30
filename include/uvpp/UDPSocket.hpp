@@ -13,8 +13,8 @@ namespace uvpp {
 		friend void internal::onRead(uv_udp_t *udp_socket, ssize_t nread, const uv_buf_t *buf, const struct sockaddr *addr, unsigned flags);
 
 	public:
-		using OnDataCallback = std::function<void(std::string data, std::string from_host, int from_port)>;
-		using OnErrorCallback = std::function<void(int,std::string)>;
+		using OnDataCallback = std::function<void(const std::string& data, const std::string& from_host, int from_port)>;
+		using OnErrorCallback = std::function<void(int, const std::string&)>;
 
 		UDPSocket();
 		UDPSocket(const UDPSocket&) = delete;
