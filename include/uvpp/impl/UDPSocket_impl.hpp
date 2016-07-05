@@ -2,7 +2,7 @@
 #define UDPSocket_impl_hpp
 
 namespace uvpp {
-	namespace internal {
+	namespace _udp_internal {
 		inline void allocBuffer(uv_handle_t*, size_t suggested_size, uv_buf_t* buf) {
   		buf->base = new char[suggested_size];
 			buf->len = suggested_size;
@@ -138,7 +138,7 @@ namespace uvpp {
     struct sockaddr_in recv_addr;
     uv_ip4_addr("0.0.0.0", _listening_on_port, &recv_addr);
     uv_udp_bind(_udp_socket, (const struct sockaddr *)&recv_addr, UV_UDP_REUSEADDR);
-    uv_udp_recv_start(_udp_socket, internal::allocBuffer, internal::onRead);
+    uv_udp_recv_start(_udp_socket, _udp_internal::allocBuffer, _udp_internal::onRead);
     _is_listening = true;
 	}
 }

@@ -6,15 +6,15 @@
 #include "uv.h"
 
 namespace uvpp {
-	namespace internal {
+	namespace _tcp_internal {
 		void onConnect(uv_connect_t *req, int status);
 		void onRead(uv_stream_t *tcp_connection, ssize_t nread, const uv_buf_t* buf);
 	}
 	class TCPAcceptor;
 	class TCPConnection {
 		friend class TCPAcceptor;
-		friend void internal::onRead(uv_stream_t *tcp_connection, ssize_t nread, const uv_buf_t* buf);
-		friend void internal::onConnect(uv_connect_t *req, int status);
+		friend void _tcp_internal::onRead(uv_stream_t *tcp_connection, ssize_t nread, const uv_buf_t* buf);
+		friend void _tcp_internal::onConnect(uv_connect_t *req, int status);
 
 	public:
 		using OnConnectCallback = std::function<void(void)>;

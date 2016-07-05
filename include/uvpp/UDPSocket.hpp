@@ -6,11 +6,11 @@
 #include "uv.h"
 
 namespace uvpp {
-	namespace internal {
+	namespace _udp_internal {
 		void onRead(uv_udp_t *udp_socket, ssize_t nread, const uv_buf_t *buf, const struct sockaddr *addr, unsigned flags);
 	}
 	class UDPSocket {
-		friend void internal::onRead(uv_udp_t *udp_socket, ssize_t nread, const uv_buf_t *buf, const struct sockaddr *addr, unsigned flags);
+		friend void _udp_internal::onRead(uv_udp_t *udp_socket, ssize_t nread, const uv_buf_t *buf, const struct sockaddr *addr, unsigned flags);
 
 	public:
 		using OnDataCallback = std::function<void(const std::string& data, const std::string& from_host, int from_port)>;

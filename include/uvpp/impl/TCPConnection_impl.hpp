@@ -2,7 +2,7 @@
 #define TCPConnection_impl_hpp
 
 namespace uvpp {
-	namespace internal {
+	namespace _tcp_internal {
 		inline void allocBuffer(uv_handle_t*, size_t suggested_size, uv_buf_t* buf) {
   			buf->base = new char[suggested_size];
 			buf->len = suggested_size;
@@ -51,7 +51,7 @@ namespace uvpp {
 
 	inline TCPConnection::TCPConnection(uv_loop_t* loop, const std::string& connect_ip, int connect_port, 
 					const OnConnectCallback& on_connect, const OnDataCallback& on_data, const OnErrorCallback& on_error) :
-	_is_connected(false), _tcp_connection(nullptr), _running_loop(loop), _connected_to_ip(connect_ip), _connected_to_port(connect_port),
+	_is_connected(false), _running_loop(loop), _tcp_connection(nullptr), _connected_to_ip(connect_ip), _connected_to_port(connect_port),
 	_on_connect(on_connect), _on_data(on_data), _on_error(on_error) {
     uv_connect();
 	}
@@ -170,11 +170,11 @@ namespace uvpp {
     struct sockaddr_in req_addr;
     uv_ip4_addr(_connected_to_ip.c_str(), _connected_to_port, &req_addr);
   	uv_connect_t* connect_req = new uv_connect_t();
-  	uv_tcp_connect(connect_req, _tcp_connection, (const struct sockaddr*) &req_addr, internal::onConnect);
+  	uv_tcp_connect(connect_req, _tcp_connection, (const struct sockaddr*) &req_addr, _tcp_internal::onConnect);
 	}
 
 	inline void TCPConnection::uv_read() {
-		uv_read_start((uv_stream_t*) _tcp_connection, internal::allocBuffer, internal::onRead);
+		uv_read_start((uv_stream_t*) _tcp_connection, _tcp_internal::allocBuffer, _tcp_internal::onRead);
 	}
 }
 
