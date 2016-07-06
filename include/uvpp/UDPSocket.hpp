@@ -20,6 +20,7 @@ namespace uvpp {
 		UDPSocket(const UDPSocket&) = delete;
 		UDPSocket(UDPSocket&&);
 		UDPSocket(uv_loop_t* loop, const OnDataCallback& on_data = nullptr, const OnErrorCallback& on_error = nullptr);
+		UDPSocket(uv_loop_t* loop, int listen_on_port, const OnDataCallback& on_data = nullptr, const OnErrorCallback& on_error = nullptr);
 		~UDPSocket();
 		UDPSocket& operator=(const UDPSocket&) = delete;
     	UDPSocket& operator=(UDPSocket&& other);
@@ -27,6 +28,7 @@ namespace uvpp {
 		void send(const std::string& send_host, int send_port, const std::string& data);
 
 		void bind(uv_loop_t* loop, const OnDataCallback& on_data = nullptr, const OnErrorCallback& on_error = nullptr);
+		void bind(uv_loop_t* loop, int listen_on_port, const OnDataCallback& on_data = nullptr, const OnErrorCallback& on_error = nullptr);
 		void unbind();
 
 		bool isListening() const;
@@ -38,6 +40,7 @@ namespace uvpp {
 	private:
     void swap(UDPSocket& other);
 		void uv_bind_and_listen();
+		void uv_bind_and_listen_on_port(int listen_on_port);
 
 	private:
 		bool _is_listening;
