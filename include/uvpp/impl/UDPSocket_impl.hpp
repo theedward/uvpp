@@ -151,7 +151,7 @@ namespace uvpp {
     struct sockaddr_storage sa;
     int nameLength = sizeof(sa);
     uv_udp_getsockname(_udp_socket, (sockaddr*) &sa, &nameLength);
-    _listening_on_port = ((sockaddr_in*)&sa)->sin_port;
+    _listening_on_port = ntohs(((sockaddr_in*)&sa)->sin_port);
 	}
 
   inline void UDPSocket::uv_bind_and_listen_on_port(int listen_on_port) {

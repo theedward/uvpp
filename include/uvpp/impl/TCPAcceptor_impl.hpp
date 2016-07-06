@@ -22,7 +22,7 @@ namespace uvpp {
 				  int nameLength = sizeof(sa);
 				  uv_tcp_getpeername(client, (sockaddr*) &sa, &nameLength);
           uv_inet_ntop(AF_INET, &((sockaddr_in*)&sa)->sin_addr, ip, sizeof(ip));
-  				from_acceptor->_on_accept(from_acceptor->new_tcp_connection_from_accept(client, ip, ((sockaddr_in*)&sa)->sin_port));
+  				from_acceptor->_on_accept(from_acceptor->new_tcp_connection_from_accept(client, ip, ntohs(((sockaddr_in*)&sa)->sin_port)));
   			} else {
   			 	uv_close((uv_handle_t*) client, NULL);
   			}
