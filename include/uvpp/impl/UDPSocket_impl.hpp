@@ -32,11 +32,10 @@ namespace uvpp {
 	}
 
   inline UDPSocket::UDPSocket() :
-    _is_listening(false), _udp_socket(nullptr), _listening_on_port(0), _on_data(nullptr), _on_error(nullptr) { }
+    _is_listening(false), _udp_socket(nullptr), _listening_on_port(-1), _on_data(nullptr), _on_error(nullptr) { }
 
-	inline UDPSocket::UDPSocket(uv_loop_t* loop, int bind_listen_port,
-			const OnDataCallback& on_data, const OnErrorCallback& on_error) :
-	_is_listening(false), _running_loop(loop), _udp_socket(nullptr), _listening_on_port(bind_listen_port),
+	inline UDPSocket::UDPSocket(uv_loop_t* loop, const OnDataCallback& on_data, const OnErrorCallback& on_error) :
+	_is_listening(false), _running_loop(loop), _udp_socket(nullptr), _listening_on_port(-1),
 	_on_data(on_data), _on_error(on_error) {
     uv_bind_and_listen();
 	}
@@ -73,10 +72,8 @@ namespace uvpp {
     }
 	}
 
-	inline void UDPSocket::bind(uv_loop_t* loop, int bind_listen_port,
-						const OnDataCallback& on_data, const OnErrorCallback& on_error) {
+	inline void UDPSocket::bind(uv_loop_t* loop, const OnDataCallback& on_data, const OnErrorCallback& on_error) {
 		_running_loop = loop;
-		_listening_on_port = bind_listen_port;
 		_on_data = on_data;
 		_on_error = on_error;
 		uv_bind_and_listen();
@@ -135,11 +132,13 @@ namespace uvpp {
   	_udp_socket = new uv_udp_t();
   	uv_udp_init(_running_loop, _udp_socket);
   	_udp_socket->data = this;
-    struct sockaddr_in recv_addr;
-    uv_ip4_addr("0.0.0.0", _listening_on_port, &recv_addr);
-    uv_udp_bind(_udp_socket, (const struct sockaddr *)&recv_addr, UV_UDP_REUSEADDR);
     uv_udp_recv_start(_udp_socket, _udp_internal::allocBuffer, _udp_internal::onRead);
     _is_listening = true;
+
+    struct sockaddr_in recv_addr;
+    int namelen = 0;
+    uv_udp_getsockname(&_udp_socket, ((sockaddr_in*)&recv_addr), &namelen);
+    _listening_on_port = ntohs(recv_addr.sin_port);
 	}
 }
 
