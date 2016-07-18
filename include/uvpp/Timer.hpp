@@ -20,7 +20,7 @@ namespace uvpp {
         void stop();
     private:
         bool _isRunning;
-        uv_timer_t _managedTimer;
+        uv_timer_t* _managedTimer;
         uint64_t _timeoutInterval;
         uint64_t _repeatInterval;
         Callback _callback;

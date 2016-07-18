@@ -21,7 +21,7 @@ namespace uvpp {
         if (isRunning()) {
             stop();
         } else {
-            delete static_cast<WorkerData*>(_managedWorker.data);
+            delete static_cast<WorkerData*>(_managedWorker->data);
         }
     }
         
@@ -42,19 +42,21 @@ namespace uvpp {
     
     template <typename WorkReturn>
     inline void PoolWorker<WorkReturn>::stop() {
-        uv_cancel((uv_req_t*)&_managedWorker);
+        uv_cancel((uv_req_t*)_managedWorker);
     }
     
     template <typename WorkReturn>
     inline void PoolWorker<WorkReturn>::runWorker(uv_loop_t* loop) {
+        _managedWorker = new uv_work_t();
         auto data =  new WorkerData{};
         data->onWork = _workCallback;
         data->onEnd = [this](PoolWorkerOpStatus opStatus, const WorkReturn& returnVal) {
             _endCallback(opStatus, returnVal);
             _isRunning = false;
+            _managedWorker = nullptr;
         };
-        _managedWorker.data = data;
-        uv_queue_work(loop, &_managedWorker, poolWorkerOnWork<WorkReturn>, poolWorkerOnEnd<WorkReturn>);
+        _managedWorker->data = data;
+        uv_queue_work(loop, _managedWorker, poolWorkerOnWork<WorkReturn>, poolWorkerOnEnd<WorkReturn>);
         _isRunning = true;
     }
     
@@ -73,8 +75,9 @@ namespace uvpp {
             workerData->onEnd(PoolWorkerOpStatus::Success, std::move(workerData->workReturn));
         } else {
             workerData->onEnd(PoolWorkerOpStatus::WorkCancelled, WorkReturn{});
-            delete workerData;
         }
+        delete workerData;
+        delete handler;
     }
 
 }

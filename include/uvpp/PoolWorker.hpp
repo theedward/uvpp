@@ -31,7 +31,7 @@ namespace uvpp {
         void runWorker(uv_loop_t* loop);
         
         bool _isRunning;
-        uv_work_t _managedWorker;
+        uv_work_t* _managedWorker;
         WorkCallback _workCallback;
         OnEndCallback _endCallback;
     };
