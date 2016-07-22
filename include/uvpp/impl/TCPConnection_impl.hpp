@@ -22,6 +22,7 @@ namespace uvpp {
         if (connection->_on_connect) connection->_on_connect();
         connection->uv_read();
       }
+      delete req;
 		}
 
 		inline void onRead(uv_stream_t *tcp_connection, ssize_t nread, const uv_buf_t* buf) {
@@ -79,7 +80,12 @@ namespace uvpp {
       char * msg = new char[data.size() + 1];
       std::copy(data.begin(), data.end(), msg);
       uv_buf_t buf = uv_buf_init(msg, data.size());
-      uv_write(write_req, (uv_stream_t*)_tcp_connection, &buf, 1, [](uv_write_t* write_req, int status) { delete write_req; });
+      write_req->data = msg;
+      uv_write(write_req, (uv_stream_t*)_tcp_connection, &buf, 1,
+               [](uv_write_t* write_req, int status) {
+                 delete (char*)write_req->data;
+                 delete write_req;
+               });
     }
 	}
 
@@ -146,10 +152,10 @@ namespace uvpp {
   inline void TCPConnection::swap(TCPConnection& other) {
     std::swap(_running_loop, other._running_loop);
     std::swap(_tcp_connection, other._tcp_connection);
-    if (other._is_connected) {
+    if (other._is_connected && _tcp_connection != nullptr) {
       _tcp_connection->data = this;
     }
-    if (_is_connected) {
+    if (_is_connected && other._tcp_connection != nullptr) {
       other._tcp_connection->data = &other;
     }
 

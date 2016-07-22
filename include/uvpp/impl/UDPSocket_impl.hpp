@@ -1,6 +1,8 @@
 #ifndef UDPSocket_impl_hpp
 #define UDPSocket_impl_hpp
 
+#include <iostream>
+
 namespace uvpp {
 	namespace _udp_internal {
 		inline void allocBuffer(uv_handle_t*, size_t suggested_size, uv_buf_t* buf) {
@@ -67,14 +69,19 @@ namespace uvpp {
     if (_is_listening) {
       uv_udp_send_t* send_req = new uv_udp_send_t();
 
-    	char * msg = new char[data.size() + 1];
+      char * msg = new char[data.size()];
       std::copy(data.begin(), data.end(), msg);
       uv_buf_t buf = uv_buf_init(msg, data.size());
-	
-    	struct sockaddr_in send_addr;
-    	uv_ip4_addr(send_host.c_str(), send_port, &send_addr);
-    	uv_udp_send(send_req, _udp_socket, &buf, 1, (const struct sockaddr *)&send_addr, 
-    		[](uv_udp_send_t* req, int status){ delete req; });
+      
+      send_req->data = msg;
+  
+      struct sockaddr_in send_addr;
+      uv_ip4_addr(send_host.c_str(), send_port, &send_addr);
+      uv_udp_send(send_req, _udp_socket, &buf, 1, (const struct sockaddr *)&send_addr, 
+        [](uv_udp_send_t* req, int status){
+          delete (char*)req->data;
+          delete req;
+        });
     }
 	}
 
@@ -124,12 +131,13 @@ namespace uvpp {
 
   // Swap with another instance of UDPSocket for move construction
   inline void UDPSocket::swap(UDPSocket& other) {
+    std::cout << "Swaping an UDP Socket" << std::endl;
     std::swap(_running_loop, other._running_loop);
     std::swap(_udp_socket, other._udp_socket);
-    if (other._is_listening) {
+    if (other._is_listening && _udp_socket != nullptr) {
       _udp_socket->data = this;
     }
-    if (_is_listening) {
+    if (_is_listening && other._udp_socket != nullptr) {
       other._udp_socket->data = &other;
     }
 

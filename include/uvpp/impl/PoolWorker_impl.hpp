@@ -20,8 +20,9 @@ namespace uvpp {
     inline PoolWorker<WorkReturn>::~PoolWorker() {
         if (isRunning()) {
             stop();
-        } else {
+        } else if (_managedWorker != nullptr) {
             delete static_cast<WorkerData*>(_managedWorker->data);
+            delete _managedWorker;
         }
     }
         
