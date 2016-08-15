@@ -82,7 +82,7 @@ namespace uvpp {
       uv_buf_t buf = uv_buf_init(msg, data.size());
       write_req->data = msg;
       uv_write(write_req, (uv_stream_t*)_tcp_connection, &buf, 1,
-               [](uv_write_t* write_req, int status) {
+               [](uv_write_t* write_req, int) {
                  delete (char*)write_req->data;
                  delete write_req;
                });
