@@ -79,7 +79,7 @@ namespace uvpp {
       uv_ip4_addr(send_host.c_str(), send_port, &send_addr);
       uv_udp_send(send_req, _udp_socket, &buf, 1, (const struct sockaddr *)&send_addr, 
         [](uv_udp_send_t* req, int status){
-          delete (char*)req->data;
+          delete[] (char*)req->data;
           delete req;
         });
     }
