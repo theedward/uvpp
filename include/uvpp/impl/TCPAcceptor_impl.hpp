@@ -31,8 +31,10 @@ namespace uvpp {
 
 	inline TCPAcceptor::TCPAcceptor() : _running_loop(nullptr), _connection_acceptor(nullptr), _is_accepting(false) { }
 
-	inline TCPAcceptor::TCPAcceptor(uv_loop_t* loop, const std::string& listen_ip, int listen_port, const OnAcceptCallback& on_accept) :
-	_running_loop(loop), _connection_acceptor(nullptr), _is_accepting(false), _listen_ip(listen_ip), _listen_port(listen_port), _on_accept(on_accept) {
+	inline TCPAcceptor::TCPAcceptor(uv_loop_t* loop, const std::string& listen_ip, int listen_port, const OnAcceptCallback& on_accept,
+        const TCPConnectionOptions& created_socket_options) :
+	_running_loop(loop), _connection_acceptor(nullptr), _is_accepting(false), _listen_ip(listen_ip), _listen_port(listen_port), _on_accept(on_accept),
+    _created_socket_options(created_socket_options) {
     start_uv_listen();
 	}
 
@@ -51,24 +53,26 @@ namespace uvpp {
     swap(other);
     return *this;
   }
-		
+
 	inline bool TCPAcceptor::isAccepting() const {
 		return _is_accepting;
 	}
 
-	inline void TCPAcceptor::accept(uv_loop_t* loop, const std::string& listen_ip, int listen_port, const OnAcceptCallback& on_accept){
+	inline void TCPAcceptor::accept(uv_loop_t* loop, const std::string& listen_ip, int listen_port, const OnAcceptCallback& on_accept,
+        const TCPConnectionOptions& created_socket_options){
 		_running_loop = loop;
 		_listen_ip = listen_ip;
 		_listen_port = listen_port;
 		_on_accept = on_accept;
+        _created_socket_options = created_socket_options;
 		start_uv_listen();
 	}
 
   inline void TCPAcceptor::stop() {
     if (_connection_acceptor) {
       _connection_acceptor->data = nullptr;
-      uv_close((uv_handle_t*)_connection_acceptor, [](uv_handle_t* connection_acceptor) { 
-        delete connection_acceptor; 
+      uv_close((uv_handle_t*)_connection_acceptor, [](uv_handle_t* connection_acceptor) {
+        delete connection_acceptor;
       });
       _connection_acceptor = nullptr;
     }
@@ -104,7 +108,7 @@ namespace uvpp {
 	}
 
 	inline TCPConnection TCPAcceptor::new_tcp_connection_from_accept(uv_tcp_t* _accepted_connection, const std::string& peer_ip, int peer_port) {
-		return TCPConnection(_accepted_connection, peer_ip, peer_port);
+		return TCPConnection(_accepted_connection, peer_ip, peer_port, _created_socket_options);
 	}
 
   inline void TCPAcceptor::swap(TCPAcceptor& other) {
@@ -120,6 +124,7 @@ namespace uvpp {
     std::swap(_listen_ip, other._listen_ip);
     std::swap(_listen_port, other._listen_port);
     std::swap(_on_accept, other._on_accept);
+    std::swap(_created_socket_options, other._created_socket_options);
   }
 }
 

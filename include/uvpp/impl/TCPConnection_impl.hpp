@@ -51,10 +51,10 @@ namespace uvpp {
   inline TCPConnection::TCPConnection() :
     _is_connected(false), _tcp_connection(nullptr), _connected_to_port(0), _on_connect(nullptr), _on_data(nullptr), _on_error(nullptr) { }
 
-	inline TCPConnection::TCPConnection(uv_loop_t* loop, const std::string& connect_ip, int connect_port,
+	inline TCPConnection::TCPConnection(uv_loop_t* loop, const std::string& connect_ip, int connect_port, const TCPConnectionOptions& options,
 					const OnConnectCallback& on_connect, const OnDataCallback& on_data, const OnErrorCallback& on_error) :
 	_is_connected(false), _running_loop(loop), _tcp_connection(nullptr), _connected_to_ip(connect_ip), _connected_to_port(connect_port),
-	_on_connect(on_connect), _on_data(on_data), _on_error(on_error) {
+	_on_connect(on_connect), _on_data(on_data), _on_error(on_error), _my_options(options) {
     uv_connect();
 	}
 
@@ -76,18 +76,28 @@ namespace uvpp {
   }
 
 	inline void TCPConnection::write(const std::string& data) {
-    if (_is_connected) {
-      uv_write_t* write_req = new uv_write_t();
-      char * msg = new char[data.size() + 1];
-      std::copy(data.begin(), data.end(), msg);
-      uv_buf_t buf = uv_buf_init(msg, data.size());
-      write_req->data = msg;
-      uv_write(write_req, (uv_stream_t*)_tcp_connection, &buf, 1,
-               [](uv_write_t* write_req, int) {
-                 delete[] (char*)write_req->data;
-                 delete write_req;
-               });
-    }
+        if (_is_connected) {
+            uv_write_t* write_req = new uv_write_t();
+
+            std::string frame;
+            if (_my_options.use_packet_size_header) {
+                uint32_t size = htonl(data.size());
+                frame.append((const char*)&size, sizeof(size));
+                frame.append(std::move(data));
+            } else {
+                frame = std::move(data);
+            }
+
+            char * msg = new char[frame.size() + 1];
+            std::copy(frame.begin(), frame.end(), msg);
+            uv_buf_t buf = uv_buf_init(msg, frame.size());
+            write_req->data = msg;
+            uv_write(write_req, (uv_stream_t*)_tcp_connection, &buf, 1,
+                [](uv_write_t* write_req, int) {
+                    delete[] (char*)write_req->data;
+                    delete write_req;
+                });
+        }
 	}
 
 	inline void TCPConnection::connect(uv_loop_t* loop, const std::string& connect_ip, int connect_port,
@@ -148,9 +158,9 @@ namespace uvpp {
 	}
 
 	// Private constructor to be used by TCP Acceptor in order to return a connection upon accept
-	inline TCPConnection::TCPConnection(uv_tcp_t* accepted_connection, const std::string& peer_ip, int peer_port) :
+	inline TCPConnection::TCPConnection(uv_tcp_t* accepted_connection, const std::string& peer_ip, int peer_port, const TCPConnectionOptions& options) :
 	_is_connected(true), _tcp_connection(accepted_connection), _connected_to_ip(peer_ip), _connected_to_port(peer_port),
-	_on_connect(nullptr), _on_data(nullptr), _on_error(nullptr), _queue_on_data(true) {
+	_on_connect(nullptr), _on_data(nullptr), _on_error(nullptr), _queue_on_data(true), _my_options(options) {
 		_tcp_connection->data = this;
 		uv_read();
 	}
@@ -174,6 +184,8 @@ namespace uvpp {
         std::swap(_on_connect, other._on_connect);
         std::swap(_on_data, other._on_data);
         std::swap(_on_error, other._on_error);
+
+        std::swap(_my_options, other._my_options);
     }
 
     inline void TCPConnection::uv_connect() {
@@ -191,8 +203,16 @@ namespace uvpp {
 	}
 
     inline void TCPConnection::processDataFrame(ssize_t nread, const uv_buf_t* buf) {
-        _incomplete_data_buffer.append((char*)buf->base, nread);
-        consumeIncompleteDataBuffer();
+        if (_my_options.use_packet_size_header) {
+            _incomplete_data_buffer.append((char*)buf->base, nread);
+            consumeIncompleteDataBuffer();
+        } else {
+            if(_on_data) {
+                _on_data(std::string((char*)buf->base, (size_t) nread));
+            } else if (_queue_on_data) {
+                _queued_messages.push_back(std::string((char*)buf->base, (size_t) nread));
+            }
+        }
     }
 
     inline void TCPConnection::consumeIncompleteDataBuffer() {
@@ -204,7 +224,7 @@ namespace uvpp {
         memcpy(&frame_len, _incomplete_data_buffer.data(), sizeof(frame_len));
         frame_len = ntohl(frame_len);
 
-        if (frame_len < _incomplete_data_buffer.size()) {
+        if (frame_len <= _incomplete_data_buffer.size() - sizeof(frame_len)) {
             std::string frame{_incomplete_data_buffer.data() + sizeof(frame_len), frame_len};
             if(_on_data) {
                 _on_data(frame);
