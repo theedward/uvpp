@@ -3,6 +3,7 @@
 
 #include <functional>
 #include <string>
+#include <vector>
 #include "uv.h"
 
 namespace uvpp {
@@ -24,15 +25,15 @@ namespace uvpp {
 		TCPConnection();
 		TCPConnection(const TCPConnection&) = delete;
 		TCPConnection(TCPConnection&&);
-		TCPConnection(uv_loop_t* loop, const std::string& connect_ip, int connect_port, 
+		TCPConnection(uv_loop_t* loop, const std::string& connect_ip, int connect_port,
 						const OnConnectCallback& on_connect = nullptr, const OnDataCallback& on_data = nullptr, const OnErrorCallback& on_error = nullptr);
 		~TCPConnection();
 		TCPConnection& operator=(const TCPConnection&) = delete;
-    TCPConnection& operator=(TCPConnection&& other);
-	
+        TCPConnection& operator=(TCPConnection&& other);
+
 		void write(const std::string& data);
 
-		void connect(uv_loop_t* loop, const std::string& connect_ip, int connect_port, 
+		void connect(uv_loop_t* loop, const std::string& connect_ip, int connect_port,
 						const OnConnectCallback& on_connect = nullptr, const OnDataCallback& on_data = nullptr, const OnErrorCallback& on_error = nullptr);
 		void disconnect();
 
@@ -46,9 +47,12 @@ namespace uvpp {
 	private:
 		// Private constructor to be used by TCP Acceptor in order to return a connection upon accept
 		TCPConnection(uv_tcp_t* _accepted_connection, const std::string& peer_ip, int peer_port);
-    void swap(TCPConnection& other);
+        void swap(TCPConnection& other);
 		void uv_connect();
 		void uv_read();
+
+        void processDataFrame(ssize_t nread, const uv_buf_t* buf);
+        void consumeIncompleteDataBuffer();
 	private:
 		bool _is_connected;
 
@@ -61,6 +65,10 @@ namespace uvpp {
 		OnConnectCallback _on_connect;
 		OnDataCallback _on_data;
 		OnErrorCallback _on_error;
+
+        std::string _incomplete_data_buffer;
+        bool _queue_on_data = false;
+        std::vector<std::string> _queued_messages;
 	};
 }
 
