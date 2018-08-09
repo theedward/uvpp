@@ -113,11 +113,18 @@ namespace uvpp {
 
 	inline void TCPConnection::disconnect() {
     if (_tcp_connection) {
-      _tcp_connection->data = nullptr;
-      uv_close((uv_handle_t*)_tcp_connection, [](uv_handle_t* tcp_connection) {
-        delete tcp_connection;
-      });
-      _tcp_connection = nullptr;
+        auto req = new uv_shutdown_t;
+        req->data = _tcp_connection;
+        uv_shutdown(req, (uv_stream_t*)_tcp_connection, [](uv_shutdown_t* req, int status) {
+            uv_tcp_t* tcpConn = (uv_tcp_t*)req->data;
+            delete req;
+            tcpConn->data = nullptr;
+            uv_close((uv_handle_t*)tcpConn, [](uv_handle_t* tcp_connection) {
+                delete tcp_connection;
+            });
+        });
+
+        _tcp_connection = nullptr;
     }
     _is_connected = false;
     _connected_to_ip = std::string();

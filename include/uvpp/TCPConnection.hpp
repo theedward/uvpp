@@ -45,6 +45,7 @@ namespace uvpp {
 		bool isConnected() const;
 		const std::string& ip() const;
 		int port() const;
+		uv_tcp_t* getTCPConnection() { return _tcp_connection; }
 
 		void setOnConnectCallback(const OnConnectCallback& on_connect);
 		void setOnDataCallback(const OnDataCallback& on_data);
