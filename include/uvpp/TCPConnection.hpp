@@ -26,12 +26,14 @@ namespace uvpp {
 		using OnConnectCallback = std::function<void(void)>;
 		using OnDataCallback = std::function<void(std::string)>;
 		using OnErrorCallback = std::function<void(int,std::string)>;
+		using OnDestroyCallback = std::function<void(void)>;
 
 		TCPConnection();
 		TCPConnection(const TCPConnection&) = delete;
 		TCPConnection(TCPConnection&&);
 		TCPConnection(uv_loop_t* loop, const std::string& connect_ip, int connect_port, const TCPConnectionOptions& options = TCPConnectionOptions(),
-						const OnConnectCallback& on_connect = nullptr, const OnDataCallback& on_data = nullptr, const OnErrorCallback& on_error = nullptr);
+						const OnConnectCallback& on_connect = nullptr, const OnDataCallback& on_data = nullptr, const OnErrorCallback& on_error = nullptr,
+						const OnDestroyCallback& on_destroy = nullptr);
 		~TCPConnection();
 		TCPConnection& operator=(const TCPConnection&) = delete;
         TCPConnection& operator=(TCPConnection&& other);
@@ -39,7 +41,8 @@ namespace uvpp {
 		void write(const std::string& data);
 
 		void connect(uv_loop_t* loop, const std::string& connect_ip, int connect_port,
-						const OnConnectCallback& on_connect = nullptr, const OnDataCallback& on_data = nullptr, const OnErrorCallback& on_error = nullptr);
+						const OnConnectCallback& on_connect = nullptr, const OnDataCallback& on_data = nullptr, const OnErrorCallback& on_error = nullptr,
+						const OnDestroyCallback& on_destroy = nullptr);
 		void disconnect();
 
 		bool isConnected() const;
@@ -50,6 +53,7 @@ namespace uvpp {
 		void setOnConnectCallback(const OnConnectCallback& on_connect);
 		void setOnDataCallback(const OnDataCallback& on_data);
 		void setOnErrorCallback(const OnErrorCallback& on_error);
+		void setOnDestroyCallback(const OnDestroyCallback& on_destroy);
 
         // Options
         inline void setUsePacketSizeHeader(bool option = true) { _my_options.use_packet_size_header = option; }
@@ -74,6 +78,7 @@ namespace uvpp {
 		OnConnectCallback _on_connect;
 		OnDataCallback _on_data;
 		OnErrorCallback _on_error;
+		OnDestroyCallback _on_destroy;
 
         std::string _incomplete_data_buffer;
         bool _queue_on_data = false;

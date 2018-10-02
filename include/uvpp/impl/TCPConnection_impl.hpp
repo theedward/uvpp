@@ -52,9 +52,10 @@ namespace uvpp {
     _is_connected(false), _tcp_connection(nullptr), _connected_to_port(0), _on_connect(nullptr), _on_data(nullptr), _on_error(nullptr) { }
 
 	inline TCPConnection::TCPConnection(uv_loop_t* loop, const std::string& connect_ip, int connect_port, const TCPConnectionOptions& options,
-					const OnConnectCallback& on_connect, const OnDataCallback& on_data, const OnErrorCallback& on_error) :
+					const OnConnectCallback& on_connect, const OnDataCallback& on_data, const OnErrorCallback& on_error,
+					const OnDestroyCallback& on_destroy) :
 	_is_connected(false), _running_loop(loop), _tcp_connection(nullptr), _connected_to_ip(connect_ip), _connected_to_port(connect_port),
-	_on_connect(on_connect), _on_data(on_data), _on_error(on_error), _my_options(options) {
+	_on_connect(on_connect), _on_data(on_data), _on_error(on_error), _on_destroy(on_destroy), _my_options(options) {
     uv_connect();
 	}
 
@@ -101,13 +102,15 @@ namespace uvpp {
 	}
 
 	inline void TCPConnection::connect(uv_loop_t* loop, const std::string& connect_ip, int connect_port,
-					const OnConnectCallback& on_connect, const OnDataCallback& on_data, const OnErrorCallback& on_error) {
+					const OnConnectCallback& on_connect, const OnDataCallback& on_data, const OnErrorCallback& on_error,
+					const OnDestroyCallback& on_destroy) {
 		_running_loop = loop;
 		_connected_to_ip = connect_ip;
 		_connected_to_port = connect_port;
 		_on_connect = on_connect;
 		_on_data = on_data;
 		_on_error = on_error;
+		_on_destroy = on_destroy;
 		uv_connect();
 	}
 
@@ -117,6 +120,8 @@ namespace uvpp {
         req->data = _tcp_connection;
         uv_shutdown(req, (uv_stream_t*)_tcp_connection, [](uv_shutdown_t* req, int status) {
             uv_tcp_t* tcpConn = (uv_tcp_t*)req->data;
+            TCPConnection *connection = (TCPConnection*) tcpConn->data;
+            connection->_on_destroy();
             delete req;
             tcpConn->data = nullptr;
             uv_close((uv_handle_t*)tcpConn, [](uv_handle_t* tcp_connection) {
@@ -164,10 +169,14 @@ namespace uvpp {
 		_on_error = on_error;
 	}
 
+	inline void TCPConnection::setOnDestroyCallback(const OnDestroyCallback& on_destroy) {
+		_on_destroy = on_destroy;
+	}
+
 	// Private constructor to be used by TCP Acceptor in order to return a connection upon accept
 	inline TCPConnection::TCPConnection(uv_tcp_t* accepted_connection, const std::string& peer_ip, int peer_port, const TCPConnectionOptions& options) :
 	_is_connected(true), _tcp_connection(accepted_connection), _connected_to_ip(peer_ip), _connected_to_port(peer_port),
-	_on_connect(nullptr), _on_data(nullptr), _on_error(nullptr), _queue_on_data(true), _my_options(options) {
+	_on_connect(nullptr), _on_data(nullptr), _on_error(nullptr), _on_destroy(nullptr), _queue_on_data(true), _my_options(options) {
 		_tcp_connection->data = this;
 		uv_read();
 	}
@@ -191,6 +200,7 @@ namespace uvpp {
         std::swap(_on_connect, other._on_connect);
         std::swap(_on_data, other._on_data);
         std::swap(_on_error, other._on_error);
+        std::swap(_on_destroy, other._on_destroy);
 
         std::swap(_my_options, other._my_options);
     }
