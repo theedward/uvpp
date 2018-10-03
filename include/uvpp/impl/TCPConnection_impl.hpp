@@ -120,11 +120,10 @@ namespace uvpp {
         req->data = _tcp_connection;
         uv_shutdown(req, (uv_stream_t*)_tcp_connection, [](uv_shutdown_t* req, int status) {
             uv_tcp_t* tcpConn = (uv_tcp_t*)req->data;
-            TCPConnection *connection = (TCPConnection*) tcpConn->data;
-            connection->_on_destroy();
             delete req;
-            tcpConn->data = nullptr;
             uv_close((uv_handle_t*)tcpConn, [](uv_handle_t* tcp_connection) {
+                TCPConnection *connection = (TCPConnection*) tcp_connection->data;
+                connection->_on_destroy();
                 delete tcp_connection;
             });
         });
